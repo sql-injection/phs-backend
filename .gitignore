@@ -1,0 +1,7 @@
+.DS_Store
+.idea/
+.pyre_configuration*
+.watchmanconfig
+.pyre/
+*.pyc
+__pycache__/
