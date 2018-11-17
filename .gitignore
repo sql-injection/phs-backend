@@ -1,7 +1,5 @@
 .DS_Store
 .idea/
-.pyre_configuration*
-.watchmanconfig
-.pyre/
 *.pyc
 __pycache__/
+secret.env

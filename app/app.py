@@ -19,11 +19,10 @@ env_mode = env.str(
 with env.prefixed(env_mode):
     with env.prefixed("_DB_"):
         db_user = env.str("USER", default="test_user")
-        db_password = env.str("DB_PASSWORD", default="test_password")
+        db_password = env.str("PASSWORD", default="test_password")
         db_host = env.str("HOST", default="localhost")
         db_port = env.int("PORT", default=3000)
         db_name = env.str("NAME", default="phs_backend")
-
 
 db_uri = "mysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}".format(
     db_user=db_user,
