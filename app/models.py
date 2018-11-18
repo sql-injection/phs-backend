@@ -1,8 +1,18 @@
-import argparse, sys
 from app import db
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.inspection import inspect
+from flask import jsonify
 
-# Mixins
+
+class Serializer(object):
+    def serialize(self):
+        return {c: getattr(self, c) for c in inspect(self).attrs.keys()}
+
+    @staticmethod
+    def serialize_list(l):
+        return [m.serialize() for m in l]
+
+
 class Id(object):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -21,64 +31,72 @@ class PatientTimeSeriesMeasure(object):
 
     @declared_attr
     def patient_id(self):
-        return db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+        return db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False, primary_key=True)
 
 
-# Models
-class Patient(Human, db.Model):
-    birth_date = db.Column(db.Date, nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor.id'), nullable=False)
-    doctor = db.relationship('Doctor', backref=db.backref('patient', lazy=True))
-    heart_rate_measures = db.relationship('HeartRate', backref='patient', lazy=True)
-    step_measures = db.relationship('Steps', backref='patient', lazy=True)
-
-    def __init__(self, first_name, last_name):
-        Human.__init__(self, first_name, last_name)
+patient_medication = db.Table('patient_medication',
+                              db.Column("patient_id", db.Integer, db.ForeignKey(
+                                  "patient.id"), primary_key=True),
+                              db.Column("medication_id", db.Integer, db.ForeignKey(
+                                  "medication.id"), primary_key=True),
+                              db.Column("prescription", db.Text(length=500))
+                              )
 
 
-class Doctor(Human, db.Model):
-    def __init__(self, first_name, last_name):
-        Human.__init__(self, first_name, last_name)
-
-
-class Medication(Id, db.Model):
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+class Medication(Id, db.Model, Serializer):
     name = db.Column(db.String(100))
-    description = db.Column(db.String(255))
-    prescription = db.Column(db.String(255))
+    description = db.Column(db.Text(length=500))
 
 
-class HeartRate(PatientTimeSeriesMeasure, db.Model):
+class Patient(Human, db.Model, Serializer):
+    birth_date = db.Column(db.Date, nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey(
+        'doctor.id'), nullable=False)
+    doctor = db.relationship(
+        "Doctor", backref=db.backref("patients", lazy=True))
+    heart_rate_measures = db.relationship(
+        "HeartRate", backref=db.backref("patient", lazy=True))
+    step_measures = db.relationship(
+        "Steps", backref=db.backref("patient", lazy=True))
+    medication = db.relationship(
+        "Medication",
+        secondary=patient_medication,
+        lazy="subquery",
+        backref=db.backref("patient", lazy=True)
+    )
+
+    def __init__(self, first_name, last_name):
+        Human.__init__(self, first_name, last_name)
+
+    def to_json(self):
+        body = self.serialize()
+        doctor = body["doctor"].serialize()
+        del doctor["patients"]
+        body["doctor"] = doctor
+        body["birth_date"] = body["birth_date"].strftime("%Y:%m:%d")
+        del body["doctor_id"]
+        return jsonify(body)
+
+
+class Doctor(Human, db.Model, Serializer):
+    def __init__(self, first_name, last_name):
+        Human.__init__(self, first_name, last_name)
+
+
+class HeartRate(PatientTimeSeriesMeasure, db.Model, Serializer):
     heart_rate_measure = db.Column(db.Float, nullable=False)
 
 
-class Steps(PatientTimeSeriesMeasure, db.Model):
+class Steps(PatientTimeSeriesMeasure, db.Model, Serializer):
     num_steps = db.Column(db.Integer, nullable=False)
 
 
-class ActivityType(PatientTimeSeriesMeasure, db.Model):
+class ActivityType(PatientTimeSeriesMeasure, db.Model, Serializer):
     activity_type = db.Column(db.Integer, nullable=False)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Manage SQLAlchemy models")
-    parser.add_argument("--create_all", action="store_true", help="Create all models", required=False)
-    parser.add_argument("--nuke", action="store_true", help="Drop all previously created", required=False)
-    args = parser.parse_args()
-    if args.create_all and args.nuke:
-        print("Error: Cannot both create and drop all models\n")
-        parser.print_help()
-        sys.exit(2)
-
-    if args.create_all:
-        print("Creating tables...")
-        db.create_all()
-        print("Done.")
-
-    if args.nuke:
-        print("Dropping tables...")
-        db.drop_all()
-        print("Done.")
+    db.create_all()
 
 
 if __name__ == "__main__":

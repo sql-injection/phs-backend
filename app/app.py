@@ -4,6 +4,7 @@ from marshmallow.validate import OneOf
 from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask import jsonify
 
 
 env = Env()
@@ -47,3 +48,13 @@ migrate = Migrate(app, db)
 def hello_world():
     return "Hello, world!"
 
+
+@app.route('/patient/<last_name>/<first_name>', methods=["GET"])
+def get_patient(last_name, first_name):
+    from models import Patient
+    from sqlalchemy import func
+    patient = Patient.query.filter(
+        func.lower(Patient.last_name) == func.lower(last_name) and
+        func.lower(Patient.first_name) == func.lower(first_name)
+    ).first_or_404()
+    return patient.to_json()
