@@ -34,7 +34,7 @@ class PatientTimeSeriesMeasure(object):
         return db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False, primary_key=True)
 
 
-patient_medication = db.Table('patient_medication',
+patient_medication = db.Table("patient_medication",
                               db.Column("patient_id", db.Integer, db.ForeignKey(
                                   "patient.id"), primary_key=True),
                               db.Column("medication_id", db.Integer, db.ForeignKey(
@@ -42,11 +42,11 @@ patient_medication = db.Table('patient_medication',
                               db.Column("prescription", db.Text(length=500))
                               )
 
-message = db.Table('message',
+message = db.Table("message",
                     db.Column("patient_id", db.Integer, db.ForeignKey(
                         "patient.id"), primary_key=True),
                     db.Column("doctor_id", db.Integer, db.ForeignKey(
-                        "medication.id"), primary_key=True),
+                        "doctor.id"), primary_key=True),
                     db.Column("message_text", db.Text(length=500)),
                     db.Column("date_sent", db.Date),
                     db.Column("from_patient", db.Boolean)
@@ -60,25 +60,20 @@ class Medication(Id, db.Model, Serializer):
 
 class Patient(Human, db.Model, Serializer):
     birth_date = db.Column(db.Date, nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey(
-        'doctor.id'), nullable=False)
-    doctor = db.relationship(
-        "Doctor", backref=db.backref("patients", lazy=True))
-    heart_rate_measures = db.relationship(
-        "HeartRate", backref=db.backref("patient", lazy=True))
-    step_measures = db.relationship(
-        "Steps", backref=db.backref("patient", lazy=True))
-    medication = db.relationship(
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor.id'), nullable=False)
+    doctor = db.relationship("Doctor")
+    heart_rate_measures = db.relationship("HeartRate", lazy="dynamic", cascade="all, delete-orphan")
+    step_measures = db.relationship("Steps", lazy="dynamic", cascade="all, delete-orphan")
+    activity_type_measures = db.relationship("ActivityType", lazy="dynamic", cascade="all, delete-orphan")
+    medications = db.relationship(
         "Medication",
         secondary=patient_medication,
-        lazy="subquery",
-        backref=db.backref("patient", lazy=True)
+        lazy="subquery"
     )
     messages = db.relationship(
-        "Messages",
+        "Doctor",
         secondary=message,
-        lazy="subquery",
-        backref=db.backref("patient", lazy=True)
+        lazy="subquery"
     )
 
     def __init__(self, first_name, last_name):
@@ -86,11 +81,23 @@ class Patient(Human, db.Model, Serializer):
 
     def to_json(self):
         body = self.serialize()
-        doctor = body["doctor"].serialize()
-        del doctor["patients"]
-        body["doctor"] = doctor
+        body["doctor"] = body["doctor"].serialize()
         body["birth_date"] = body["birth_date"].strftime("%Y:%m:%d")
+
+        heart_rates = self.serialize_list(body["heart_rate_measures"])
+        steps = self.serialize_list(body["step_measures"])
+        activity_types = self.serialize_list(body["activity_type_measures"])
+        medications = self.serialize_list(body["medications"])
+        messages = self.serialize_list(body["messages"])
+
+        body["heart_rate_measures"] = heart_rates
+        body["step_measures"] = steps
+        body["activity_type_measures"] = activity_types
+        body["medications"] = medications
+        body["messages"] = messages
+
         del body["doctor_id"]
+
         return jsonify(body)
 
 

@@ -1,11 +1,10 @@
 from environs import Env
 from marshmallow.validate import OneOf
 
-from flask import Flask
+from flask import Flask, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify
-
+from sqlalchemy.orm import sessionmaker
 
 env = Env()
 env_mode = env.str(
@@ -58,3 +57,46 @@ def get_patient(last_name, first_name):
         func.lower(Patient.first_name) == func.lower(first_name)
     ).first_or_404()
     return patient.to_json()
+
+
+@app.route("/patient/<last_name>/<first_name>", methods=["POST"])
+def get_patient_data_in_time_window(last_name, first_name):
+    from models import Patient, ActivityType, HeartRate, Steps
+    from sqlalchemy import func
+    from errors import ApiError
+
+    start_unix_time = request.args.get("start")
+    end_unix_time = request.args.get("end")
+
+    if not start_unix_time or not end_unix_time:
+        return ApiError(status_code=400,
+                        message="Must include unix timestamps in query parameters start and end.").to_json()
+
+    try:
+        start_unix_time = int(start_unix_time)
+        end_unix_time = int(end_unix_time)
+    except ValueError:
+        return ApiError(status_code=400, message="Unix timestamps given in start and end must be integers").to_json()
+    finally:
+        patient = db.session.query(Patient).filter(
+            func.lower(Patient.last_name) == func.lower(last_name) and
+            func.lower(Patient.first_name) == func.lower(first_name)
+        ).first()
+
+        activity_measures = patient.activity_type_measures.filter(
+            (ActivityType.unix_timestamp >= start_unix_time) & (ActivityType.unix_timestamp <= end_unix_time)
+        ).all()
+        heart_rates = patient.heart_rate_measures.filter(
+            (HeartRate.unix_timestamp >= start_unix_time) & (HeartRate.unix_timestamp <= end_unix_time)
+        ).all()
+        steps = patient.step_measures.filter(
+            (Steps.unix_timestamp >= start_unix_time) & (Steps.unix_timestamp <= end_unix_time)
+        ).all()
+
+        patient.activity_type_measures = activity_measures
+        patient.heart_rate_measures = heart_rates
+        patient.step_measures = steps
+        return patient.to_json()
+
+
+
