@@ -1,4 +1,12 @@
 from flask import jsonify
+from enum import IntEnum
+
+
+class ErrorCodes(IntEnum):
+    BAD_REQUEST = 400
+    INTERNAL_SERVER_ERROR = 500
+    NOT_FOUND = 404
+    UNAUTHORIZED = 401
 
 
 class ApiError(object):
