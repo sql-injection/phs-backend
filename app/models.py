@@ -42,6 +42,16 @@ patient_medication = db.Table('patient_medication',
                               db.Column("prescription", db.Text(length=500))
                               )
 
+message = db.Table('message',
+                    db.Column("patient_id", db.Integer, db.ForeignKey(
+                        "patient.id"), primary_key=True),
+                    db.Column("doctor_id", db.Integer, db.ForeignKey(
+                        "medication.id"), primary_key=True),
+                    db.Column("message_text", db.Text(length=500)),
+                    db.Column("date_sent", db.Date),
+                    db.Column("from_patient", db.Boolean)
+                    )
+
 
 class Medication(Id, db.Model, Serializer):
     name = db.Column(db.String(100))
@@ -61,6 +71,12 @@ class Patient(Human, db.Model, Serializer):
     medication = db.relationship(
         "Medication",
         secondary=patient_medication,
+        lazy="subquery",
+        backref=db.backref("patient", lazy=True)
+    )
+    messages = db.relationship(
+        "Messages",
+        secondary=message,
         lazy="subquery",
         backref=db.backref("patient", lazy=True)
     )
