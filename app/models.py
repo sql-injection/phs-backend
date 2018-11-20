@@ -1,4 +1,4 @@
-from app import db
+from app import db, env
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.inspection import inspect
 from flask import jsonify
@@ -42,15 +42,17 @@ patient_medication = db.Table("patient_medication",
                               db.Column("prescription", db.Text(length=500))
                               )
 
-message = db.Table("message",
-                    db.Column("patient_id", db.Integer, db.ForeignKey(
-                        "patient.id"), primary_key=True),
-                    db.Column("doctor_id", db.Integer, db.ForeignKey(
-                        "doctor.id"), primary_key=True),
-                    db.Column("message_text", db.Text(length=500)),
-                    db.Column("date_sent", db.Date),
-                    db.Column("from_patient", db.Boolean)
-                    )
+
+class Message(Id, db.Model, Serializer):
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor.id'), nullable=False)
+    message_text = db.Column(db.Text(length=500))
+    date_sent = db.Column(db.BigInteger)
+    from_patient = db.Column(db.Boolean)
+
+    def to_json(self):
+        body = self.serialize()
+        return jsonify(body)
 
 
 class Medication(Id, db.Model, Serializer):
@@ -70,11 +72,7 @@ class Patient(Human, db.Model, Serializer):
         secondary=patient_medication,
         lazy="subquery"
     )
-    messages = db.relationship(
-        "Doctor",
-        secondary=message,
-        lazy="subquery"
-    )
+    messages = db.relationship("Message", lazy="dynamic", cascade="all, delete-orphan")
 
     def __init__(self, first_name, last_name):
         Human.__init__(self, first_name, last_name)

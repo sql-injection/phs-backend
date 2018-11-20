@@ -1,8 +1,10 @@
 from environs import Env
 from marshmallow.validate import OneOf
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+import time
+
 
 env = Env()
 env.read_env()
@@ -99,6 +101,38 @@ def get_patient_data_in_time_window(last_name, first_name):
         patient.heart_rate_measures = heart_rates
         patient.step_measures = steps
         return ok(patient.to_json())
+
+
+@app.route("/message", methods=["POST"])
+def send_message():
+    from models import Patient, Doctor, Message
+    from errors import ApiError, ErrorCodes
+    from tools import ok
+
+    request_body = request.json
+    patient_id = request_body["patient_id"]
+    doctor_id = request_body["doctor_id"]
+    from_patient = request_body["from_patient"]
+    message_text = request_body["message_text"]
+
+    patient = db.session.query(Patient).filter(Patient.id == patient_id).first()
+    doctor = db.session.query(Doctor).filter(Doctor.id == doctor_id).first()
+
+    if not patient or not doctor:
+        return ApiError(status_code=ErrorCodes.BAD_REQUEST,
+                        message="Patient or doctor does not exist. Unable to send message").to_json()
+
+    message = Message()
+    message.date_sent = int(time.time())
+    message.from_patient = from_patient
+    message.message_text = message_text
+    message.doctor_id = doctor_id
+    message.patient_id = patient_id
+
+    patient.messages.append(message)
+    db.session.commit()
+
+    return ok(message.to_json())
 
 
 

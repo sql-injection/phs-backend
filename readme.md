@@ -17,7 +17,7 @@
 | `FLASK_ENV`           | Flask environment mode                                             | True     | "development"         | "production" |
 | `FLASK_APP`           | Root file of the project                                           | True     | "app/app.py"          | None         |
 | `DEVELOPMENT_DB_USER` | Username that has all permissions to your MySQL database instance  | False    | <your_mysql_username> | "test_user"  |
-| `DEVELOPMENT_DB_PASSWORD`| Password associated with MySQL user | False | <your_mysql_password | "test_password" |
+| `DEVELOPMENT_DB_PASSWORD`| Password associated with MySQL user | False | <your_mysql_password> | "test_password" |
 | `DEVELOPMENT_DB_NAME` | Name of your local MySQL database | False | <your_mysql_db_name> | "phs_backend"
 | `DEVELOPMENT_DB_HOST` | Where your db lives | False | <your_local_host> | "localhost"
 | `DEVELOPMENT_DB_PORT` | Port at which your db lives | False | <your_local_port> | 3306
@@ -31,10 +31,10 @@
         * Grant permissions to a new user: `grant all PRIVILEGES on *.* to 'test_user'@'localhost' identified by 'test_password';`
         * Log out (Ctrl+D) and log in to test your newly created user: `mysql -u test_user -p`.
 * Load models 
-    * `python models.py`
+    * `python app/models.py`
 * Load patients and doctors
-    * `python load_dummy_data.py --db <db_name> --host localhost --user <username> --password <password>`
+    * `python scripts/load_dummy_data.py --db <db_name> --host localhost --user <username> --password <password>`
 * Load in patient CSVs
-    * `python load_all_patient_csvs.py --db <db_name> --host localhost --user <username> --password <password>`
+    * `python scripts/load_all_patient_csvs.py --db <db_name> --host localhost --user <username> --password <password>`
 * Start a local server
     * `python -m flask run`
