@@ -3,7 +3,24 @@
 ### Functions
 
 * Retrieving patient data within a unix timestamp window
-    * POST `/patient/<patient_first_name>/<patient_last_name>?start=<start_timestamp>&end=<end_timestamp>`
+    * POST `/patient/<patient_last_name>/<patient_first_name>?start=<start_timestamp>&end=<end_timestamp>`
+    * Query parameters: 
+        * `start` - a unix timestamp that serves as the start of the time window, in which all time series measures (heart rate, activity type, steps per minute) will succeed.
+        * `end` - a unix timestamp that serves as the end of the time window, in which all time series measures will precede. 
+    * JSON request body: None
+* Sending a message from patient to doctor, or vice-versa
+    * POST `/message`
+    * Query parameters: None
+    * JSON request body:
+        ```
+        {
+            "doctor_id":    <int>  // The id of the doctor
+            "patient_id":   <int>  // The id of the patient
+            "from_patient": <bool> // True or False whether the patient is the sender
+            "message_text"  <str>  // Content of the message
+        }
+        ```
+    
 
 ### Local development
 #### Program Requirements
