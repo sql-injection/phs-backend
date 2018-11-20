@@ -53,7 +53,7 @@
         * Grant permissions to a new user: `grant all PRIVILEGES on *.* to 'test_user'@'localhost' identified by 'test_password';`
         * Log out (Ctrl+D) and log in to test your newly created user: `mysql -u test_user -p`.
 * Load models 
-    * `python app/models.py`
+    * `flask db upgrade`
 * Load patients and doctors
     * `python scripts/load_dummy_data.py --db <db_name> --host localhost --user <username> --password <password>`
 * Load in patient CSVs

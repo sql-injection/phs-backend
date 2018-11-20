@@ -42,13 +42,16 @@ def load_csv_into_db(credentials, file_path, data_measure_type, patient_id):
     try:
         with connection.cursor() as cursor:
             if data_measure_type == DataMeasureType.HEART_RATE:
-                sql_statement = "INSERT IGNORE INTO heart_rate (unix_timestamp, heart_rate_measure, patient_id) VALUES"
+                sql_statement = "INSERT IGNORE INTO heart_rate (unix_timestamp, heart_rate_measure, rr, " \
+                        "patient_id) VALUES"
                 for index, row in enumerate(data):
-                    timestamp, measure = row
-                    sql_statement += "{} ({}, {}, {})".format(
+                    timestamp, bpm = row
+                    rr = 60 * 1000 / bpm
+                    sql_statement += "{} ({}, {}, {}, {})".format(
                         "," if index > 0 else "",
                         timestamp,
-                        measure,
+                        bpm,
+                        rr,
                         patient_id
                     )
                 cursor.execute(sql_statement)

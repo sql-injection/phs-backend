@@ -106,6 +106,7 @@ class Doctor(Human, db.Model, Serializer):
 
 class HeartRate(PatientTimeSeriesMeasure, db.Model, Serializer):
     heart_rate_measure = db.Column(db.Float, nullable=False)
+    rr = db.Column(db.Float, nullable=False)
 
 
 class Steps(PatientTimeSeriesMeasure, db.Model, Serializer):

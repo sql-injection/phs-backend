@@ -1,9 +1,10 @@
+import os
+import time
 from environs import Env
 from marshmallow.validate import OneOf
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-import time
 
 
 env = Env()
@@ -40,8 +41,9 @@ app.config.update(
 )
 
 
+MIGRATION_DIR = os.path.join('app', 'migrations')
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, directory=MIGRATION_DIR)
 
 
 @app.route("/")
