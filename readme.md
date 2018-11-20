@@ -1,5 +1,10 @@
 # personal health systems backend
 
+### Functions
+
+* Retrieving patient data within a unix timestamp window
+    * POST `/patient/<patient_first_name>/<patient_last_name>?start=<start_timestamp>&end=<end_timestamp>`
+
 ### Local development
 #### Program Requirements
 * Python 3.6.*
@@ -38,3 +43,5 @@
     * `python scripts/load_all_patient_csvs.py --db <db_name> --host localhost --user <username> --password <password>`
 * Start a local server
     * `python -m flask run`
+    
+   
