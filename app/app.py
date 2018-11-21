@@ -72,6 +72,7 @@ def get_patient_data_in_time_window(last_name, first_name):
 
     start_unix_time = request.args.get("start")
     end_unix_time = request.args.get("end")
+    print(start_unix_time, end_unix_time)
 
     if not start_unix_time or not end_unix_time:
         return ApiError(status_code=ErrorCodes.BAD_REQUEST,

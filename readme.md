@@ -1,34 +1,113 @@
 # personal health systems backend
 
-### Functions
+## Table of Contents
+1. [API](#API)
+    1. [Patient data within Unix timestamp window](#Patient-data)
+    2. [Sending a message](#Message)
+2. [Local development](#Local-development)
 
-* Retrieving patient data within a unix timestamp window
-    * POST `/patient/<patient_last_name>/<patient_first_name>?start=<start_timestamp>&end=<end_timestamp>`
-    * Query parameters: 
-        * `start` - a unix timestamp that serves as the start of the time window, in which all time series measures (heart rate, activity type, steps per minute) will succeed.
-        * `end` - a unix timestamp that serves as the end of the time window, in which all time series measures will precede. 
-    * JSON request body: None
-* Sending a message from patient to doctor, or vice-versa
-    * POST `/message`
-    * Query parameters: None
-    * JSON request body:
-        ```
-        {
-            "doctor_id":    <int>  // The id of the doctor
-            "patient_id":   <int>  // The id of the patient
-            "from_patient": <bool> // True or False whether the patient is the sender
-            "message_text"  <str>  // Content of the message
+## API
+
+### Patient data
+* URL: `POST /patient/<patient_last_name>/<patient_first_name>?start=<start_timestamp>&end=<end_timestamp>`
+* Input: 
+    * `start` - a unix timestamp that serves as the start of the time window, in which all time series measures (heart rate, activity type, steps per minute) will succeed.
+    * `end` - a unix timestamp that serves as the end of the time window, in which all time series measures will precede. 
+
+* Output: 
+    ``` 
+    "meta": {
+        "message": "ok",
+        "status_code": 200
+    },
+    "response": {
+        "first_name": "Christopher",
+        "last_name": "Riesbeck",
+        "birth_date": "1961:01:11",
+        "doctor": {
+            "id": 2,
+            "first_name": "Ilya",
+            "last_name": "Mikhelson"
+        },
+        "heart_rate_measures": [
+            {
+                "heart_rate_measure": 82,
+                "patient_id": 7,
+                "rr": 731.707,
+                "unix_timestamp": 1477309487
+            }
+            .
+            .
+            .
+        ],
+        "activity_type_measures": [
+            {
+                "activity_type": 0,
+                "patient_id": 1,
+                "unix_timestamp": 1477309036
+            },
+            .
+            .
+            .
+        ],
+        "steps": [
+            {
+                "num_steps": 0,
+                "patient_id": 7,
+                "unix_timestamp": 1477309036
+            },
+            .
+            .
+            .
+        ],
+        "medications": [ ... ],
+        "messages": [ ... ]
+    }
+    ```
+* Example:
+
+    ![Patient data function](./assets/gifs/patient_data.gif)
+
+### Message
+* URL: POST `/message`
+* Input: JSON 
+    ```
+    {
+        "doctor_id":    <int>  // The id of the doctor
+        "patient_id":   <int>  // The id of the patient
+        "from_patient": <bool> // True or False whether the patient is the sender
+        "message_text"  <str>  // Content of the message
+    }
+    ```
+* Output:
+    ``` 
+    {
+        "meta": {
+            "message": "ok",
+            "status_code": 200
+        },
+        "response": {
+            "date_sent": 1542756866,
+            "doctor_id": 1,
+            "from_patient": true,
+            "id": 1,
+            "message_text": "hello world",
+            "patient_id": 1
         }
-        ```
+    }   
+    ```
+    
     
 
-### Local development
-#### Program Requirements
+## Local development
+### Program Requirements
+
 * Python 3.6.*
 * MySQL 5.6.*
 * Pip
 
-#### Installation
+### Installation
+
 * Clone this repo: `git clone https://github.com/sql-injection/phs-backend.git`
 * `cd phs-backend/`
 * `pip install -r ./requirements.txt --no-cache-dir`
