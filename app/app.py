@@ -138,4 +138,21 @@ def send_message():
     return ok(message.to_json())
 
 
+@app.route("/patient/<last_name>/<first_name>/metrics", methods=["POST"])
+def compute_health_metrics_by_day(last_name, first_name):
+    from models import Patient, ActivityType, HeartRate, Steps
+    from sqlalchemy import func
+    from errors import ApiError, ErrorCodes
+    from tools import ok
+
+    patient = db.session.query(Patient).filter(
+        func.lower(Patient.last_name) == func.lower(last_name) and
+        func.lower(Patient.first_name) == func.lower(first_name)
+    ).first()
+
+    return ok(patient.to_json())
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+
 
