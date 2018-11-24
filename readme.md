@@ -4,6 +4,8 @@
 1. [API](#API)
     1. [Patient data within Unix timestamp window](#Patient-data)
     2. [Sending a message](#Message)
+    3. [Retrieving all messages by patient ID](#Retrieving-messages)
+    4. [Getting patient measures](#Patient-measures)
 2. [Local development](#Local-development)
 
 ## API
@@ -68,7 +70,7 @@
 
     ![Patient data function](./assets/gifs/patient_data.gif)
 
-### Message
+### Sending a message
 * URL: POST `/message`
 * Input: JSON 
     ```
@@ -96,8 +98,64 @@
         }
     }   
     ```
+
+### Retrieving messages
+* URL: `GET /patient/<patient_id>/messages`
+* Description: Retrieve all messages to and from a given patient based on patient id
+* Input: 
+    * `patient_id` - record id of patient
+* Output:
+    ```
+    "meta": {
+        "message": "ok",
+        "status_code": 200
+    },
+    "response": [
+        {
+            "date_sent": 1543034107,
+            "doctor_id": 1,
+            "from_patient": true,
+            "id": 2,
+            "message_text": "hello world",
+            "patient_id": 7
+        },
+        .
+        .
+        .
+    ]
+    ```
     
-    
+### Patient Measures
+* URL: `GET /patient/<patient_id>?start=<start_timestamp>&end=<end_timestamp>`
+* Description: Get time-domain and non-linear measures based on patient's heart rate variability in a given time frame
+* Input: 
+    * `patient_id` - record id of patient
+    * `start` - a unix timestamp that serves as the start of the time window, in which all time series measures (heart rate, activity type, steps per minute) will succeed.
+    * `end` - a unix timestamp that serves as the end of the time window, in which all time series measures will precede. 
+* Output: 
+    ``` 
+    "meta": {
+        "message": "ok",
+        "status_code": 200
+    },
+    "response": { 
+        "non_linear_measures": {
+            "dfa": {
+                "scales": [ ... ],                  # x-axis (int)
+                "fluctuation_coefficients": [ ... ] # y-axis (float)
+                "alpha": 0.7524498709660283         # scaling parameter (float)
+            },
+            "sample_entropy":  0.6379832855154047   # (float)
+        },
+        "time_domain_measures": {
+            "ann": 752.7476329113924,
+            "pnn20": 28.227848101265824,
+            "pnn50": 8.60759493670886,
+            "rmssd": 60.97512189933899,
+            "sdnn": 84.18717994076752
+        }
+    }
+    ```
 
 ## Local development
 ### Program Requirements
