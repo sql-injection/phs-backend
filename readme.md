@@ -3,7 +3,7 @@
 ## Table of Contents
 1. [API](#API)
     1. [Patient data within Unix timestamp window](#Patient-data)
-    2. [Sending a message](#Message)
+    2. [Sending a message](#Sending-a-message)
     3. [Retrieving all messages by patient ID](#Retrieving-messages)
     4. [Getting patient measures](#Patient-measures)
 2. [Local development](#Local-development)
