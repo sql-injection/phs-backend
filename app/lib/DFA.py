@@ -35,7 +35,7 @@ alpha = 3/2 : Brownian noise (random walk)
 
 """
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 def dfa(timeSeries, scale, q, m):
     '''
@@ -55,20 +55,21 @@ def dfa(timeSeries, scale, q, m):
         print('Length of time series must be greater than scale')
 
     else:
-        #Step(1): Determine the "profile" (integrated signal with subtracted offset)
-        integratedSeries = np.cumsum(timeSeries - np.mean(timeSeries)) #y_k
+        # Step(1): Determine the "profile" (integrated signal with subtracted offset)
+        integratedSeries = np.cumsum(timeSeries - np.mean(timeSeries))  # y_k
 
-        #Step(2): Divide profile into N non-overlapping segments of equal length s
+        # Step(2): Divide profile into N non-overlapping segments of equal length s
         shape = (int(integratedSeries.shape[0]) // int(scale), int(scale))
         nwLength = shape[0] * shape[1]
         windowedData = np.reshape(integratedSeries[0:int(nwLength)], shape)
 
-        #repeate same procedure from opposite end of integrated series
-        windowedData2 = np.reshape(integratedSeries[len(integratedSeries) - int(nwLength):], shape)
+        # repeat same procedure from opposite end of integrated series
+        windowedData2 = np.reshape(
+            integratedSeries[len(integratedSeries) - int(nwLength):], shape)
 
         segments = np.concatenate((windowedData, windowedData2))
-        #Step(3): Calculate local trend for each 2Ns segments by a least squares fit of the series.
-        #Then determine the variance for each segment v, v = 1,...,Ns
+        # Step(3): Calculate local trend for each 2Ns segments by a least squares fit of the series.
+        # Then determine the variance for each segment v, v = 1,...,Ns
         x = np.arange(segments.shape[1])
         rms = np.empty(segments.shape[0])
 
@@ -78,13 +79,14 @@ def dfa(timeSeries, scale, q, m):
             y_n = np.polyval(pl, x)
             rms[i] = np.sqrt(np.mean((segment - y_n) ** 2))
 
-        #(Step 4): Average over all segments to obtain the qth order fluctuation coefficient
-        q=float(q)
+        # (Step 4): Average over all segments to obtain the qth order fluctuation coefficient
+        q = float(q)
         F = np.mean(rms ** q) ** (1 / q)
 
         return F
 
-def scalingExponent(timeSeries, lowerScaleLimit, upperScaleLimit, scaleDensity, m, q, plot):
+
+def scalingExponent(timeSeries, lowerScaleLimit, upperScaleLimit, scaleDensity, m, q):
     '''
     Input Arguments   :
 
@@ -104,27 +106,20 @@ def scalingExponent(timeSeries, lowerScaleLimit, upperScaleLimit, scaleDensity, 
     startBeatNum = np.log(lowerScaleLimit) / np.log(10)
     stopBeatNum = np.log(upperScaleLimit) / np.log(10)
 
-    scales = np.floor(np.logspace(np.log10(10 ** startBeatNum), np.log10(10 ** stopBeatNum), scaleDensity))
+    scales = np.floor(np.logspace(np.log10(10 ** startBeatNum),
+                                  np.log10(10 ** stopBeatNum), scaleDensity))
     F = np.zeros(scales.shape[0])
 
-    for j,scale in enumerate(scales):
-        F[j] = dfa(timeSeries, int(scale), q, m)  #timeSeries = RR series to be analyzed
+    for j, scale in enumerate(scales):
+        # timeSeries = RR series to be analyzed
+        F[j] = dfa(timeSeries, int(scale), q, m)
 
-    #Step(5) Determine scale behavior of the fluctuation functions by analyzing
-    #log-log plots of F versus s for each value of q
-    pl2 = np.polyfit(np.log2(scales), np.log2(F), 1) #m = 1 ---> linear fit
+    # Step(5) Determine scale behavior of the fluctuation functions by analyzing
+    # log-log plots of F versus s for each value of q
+    pl2 = np.polyfit(np.log2(scales), np.log2(F), 1)  # m = 1 ---> linear fit
     lineFit = np.polyval(pl2, np.log2(scales))
 
-    scaleParameter = pl2[0] #Finding scaling exponent (Hurst exponent = h(m = 2))
-
-    if plot == 1:
-
-        plt.loglog(scales, F, '.', markersize = 3)
-        plt.plot(scales, 2 ** lineFit, linewidth = 1, label = r'$\alpha$ = %0.2f' % (scaleParameter))
-        plt.xlabel(r'$\log_{10}$(scale)')
-        plt.ylabel(r'$\log_{10}$(F)')
-        plt.title('F vs Scale')
-        plt.legend(loc='best')
-        plt.show()
+    # Finding scaling exponent (Hurst exponent = h(m = 2))
+    scaleParameter = pl2[0]
 
     return [scales, F, scaleParameter]

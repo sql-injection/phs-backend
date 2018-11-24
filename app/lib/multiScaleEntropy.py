@@ -21,13 +21,14 @@ Proceedings of the National Academy of Sciences, 88(6) (1991): 2297-2301
 """
 import numpy as np
 
-#For sleep staging analysis
+# For sleep staging analysis
 n = 30
 startBeatNum = 10
 sBn = np.log(startBeatNum) / np.log(10)
 stopBeatNum = 40
 stBn = np.log(stopBeatNum) / np.log(10)
 scales = np.floor(np.logspace(np.log10(10 ** sBn), np.log10(10 ** stBn), n))
+
 
 def multiScaleEntropy(timeSeries, scales, r, m):
     '''MultiScaleEntropy - algorithm to calculate multiscale entropy (MSE) for complex time series.
@@ -49,12 +50,14 @@ def multiScaleEntropy(timeSeries, scales, r, m):
         if s > N:
             print('Scale must not exceed length of the time series')
         else:
-            #"course-graining" process
-            cuts = np.reshape(timeSeries[:(N - int(np.mod(N, s)))], (int(np.floor(N/s)), int(s)))
+            # "course-graining" process
+            cuts = np.reshape(
+                timeSeries[:(N - int(np.mod(N, s)))], (int(np.floor(N/s)), int(s)))
             coarseGrainedSeries = np.mean(cuts, 1)
             MSE.append(sampEn(coarseGrainedSeries, m, r))
 
     return MSE
+
 
 def sampEn(x, m, r):
     '''sampEn computes sample entropy of time series 'x'.
@@ -72,9 +75,9 @@ def sampEn(x, m, r):
     W = [m, m + 1]
 
     for i in W:
-        #create space for extracted windows
-        z = np.zeros((L - i + 1 , i))
-        #extract windows and store in matrix z
+        # create space for extracted windows
+        z = np.zeros((L - i + 1, i))
+        # extract windows and store in matrix z
         j = np.arange(0, L - i + 1)
         for k in j:
             z[k][:] = x[k:k + i]
@@ -83,18 +86,17 @@ def sampEn(x, m, r):
         for l in j:
             for n in j:
                 if n != l:
-                   #Chebyshev distance
+                   # Chebyshev distance
                     D = max(abs(z[l][:] - z[n][:]))
-                    if D < r: #distance exceeds tolerance
+                    if D < r:  # distance exceeds tolerance
                         count += 1
 
         correlHolder.append(count)
 
-
     B = correlHolder[0]
     A = correlHolder[1]
 
-    if (A == 0) | (B == 0): #need to do some research on this result***
+    if (A == 0) | (B == 0):  # need to do some research on this result***
         return 0
     else:
         return -1 * np.log(float(A) / float(B))

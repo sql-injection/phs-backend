@@ -7,8 +7,8 @@ Created on Wed Mar  1 13:59:24 2017
 
 import numpy as np
 
-def timeDomain(NN):
 
+def timeDomain(NN):
     L = float(len(NN))
     ANN = np.mean(NN)
     SDNN = np.std(NN)
@@ -20,6 +20,6 @@ def timeDomain(NN):
     rMSSD = np.sqrt((1/L) * sum(np.diff(NN) ** 2))
     #MedianNN = np.median(NN)
 
-    timeDomainFeats = [ANN,SDNN,pNN50,pNN20,rMSSD]
+    timeDomainFeats = [ANN, SDNN, pNN50, pNN20, rMSSD]
 
     return timeDomainFeats

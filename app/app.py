@@ -1,11 +1,16 @@
 import os
 import time
+import numpy as np
 from environs import Env
+from threading import Thread
 from marshmallow.validate import OneOf
 from flask import Flask, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
+from lib.timeDomain import timeDomain
+from lib.multiScaleEntropy import sampEn
+from lib.DFA import scalingExponent
 
 env = Env()
 env.read_env()
@@ -72,7 +77,6 @@ def get_patient_data_in_time_window(last_name, first_name):
 
     start_unix_time = request.args.get("start")
     end_unix_time = request.args.get("end")
-    print(start_unix_time, end_unix_time)
 
     if not start_unix_time or not end_unix_time:
         return ApiError(status_code=ErrorCodes.BAD_REQUEST,
@@ -91,13 +95,16 @@ def get_patient_data_in_time_window(last_name, first_name):
         ).first()
 
         activity_measures = patient.activity_type_measures.filter(
-            (ActivityType.unix_timestamp >= start_unix_time) & (ActivityType.unix_timestamp <= end_unix_time)
+            (ActivityType.unix_timestamp >= start_unix_time) & (
+                ActivityType.unix_timestamp <= end_unix_time)
         ).all()
         heart_rates = patient.heart_rate_measures.filter(
-            (HeartRate.unix_timestamp >= start_unix_time) & (HeartRate.unix_timestamp <= end_unix_time)
+            (HeartRate.unix_timestamp >= start_unix_time) & (
+                HeartRate.unix_timestamp <= end_unix_time)
         ).all()
         steps = patient.step_measures.filter(
-            (Steps.unix_timestamp >= start_unix_time) & (Steps.unix_timestamp <= end_unix_time)
+            (Steps.unix_timestamp >= start_unix_time) & (
+                Steps.unix_timestamp <= end_unix_time)
         ).all()
 
         patient.activity_type_measures = activity_measures
@@ -118,7 +125,8 @@ def send_message():
     from_patient = request_body["from_patient"]
     message_text = request_body["message_text"]
 
-    patient = db.session.query(Patient).filter(Patient.id == patient_id).first()
+    patient = db.session.query(Patient).filter(
+        Patient.id == patient_id).first()
     doctor = db.session.query(Doctor).filter(Doctor.id == doctor_id).first()
 
     if not patient or not doctor:
@@ -138,21 +146,91 @@ def send_message():
     return ok(message.to_json())
 
 
-@app.route("/patient/<last_name>/<first_name>/metrics", methods=["POST"])
-def compute_health_metrics_by_day(last_name, first_name):
-    from models import Patient, ActivityType, HeartRate, Steps
-    from sqlalchemy import func
+@app.route("/patient/<patient_id>/messages", methods=["GET"])
+def get_all_messages(patient_id):
+    from models import Message
+    from tools import ok
+
+    messages = db.session.query(Message).filter(
+        Message.patient_id == patient_id)
+    messages = Message.serialize_list(messages)
+    return ok(messages)
+
+
+@app.route("/patient/<patient_id>/metrics", methods=["GET"])
+def compute_health_metrics_in_time_window(patient_id):
+    from models import HeartRate
     from errors import ApiError, ErrorCodes
     from tools import ok
 
-    patient = db.session.query(Patient).filter(
-        func.lower(Patient.last_name) == func.lower(last_name) and
-        func.lower(Patient.first_name) == func.lower(first_name)
-    ).first()
+    start_unix_time = request.args.get("start")
+    end_unix_time = request.args.get("end")
 
-    return ok(patient.to_json())
+    if not start_unix_time or not end_unix_time:
+        return ApiError(status_code=ErrorCodes.BAD_REQUEST,
+                        message="Must include unix timestamps in query parameters start and end.").to_json()
+
+    try:
+        start_unix_time = int(start_unix_time)
+        end_unix_time = int(end_unix_time)
+    except ValueError:
+        return ApiError(status_code=ErrorCodes.BAD_REQUEST,
+                        message="Unix timestamps given in start and end must be integers").to_json()
+    finally:
+        payload = dict()
+
+        # Produce a list of RR intervals based on time window
+        rr_list = db.session.query(HeartRate).filter(
+            (HeartRate.patient_id == patient_id) &
+            (HeartRate.unix_timestamp >= start_unix_time) &
+            (HeartRate.unix_timestamp <= end_unix_time)
+        ).with_entities(HeartRate.rr).all()
+        rrs = [rr for rr_sublist in rr_list for rr in rr_sublist]
+
+        time_domain_measures = dict()
+        non_linear_measures = dict()
+
+        def time_domain_worker():
+            [ann, sdnn, p_nn50, p_nn20, r_mssd] = timeDomain(rrs)
+            time_domain_measures["ann"] = ann
+            time_domain_measures["sdnn"] = sdnn
+            time_domain_measures["pnn50"] = p_nn50
+            time_domain_measures["pnn20"] = p_nn20
+            time_domain_measures["rmssd"] = r_mssd
+
+        def sample_entropy_worker():
+            r = 0.2 * np.std(rrs)
+            non_linear_measures["sample_entropy"] = sampEn(rrs, 2, r)
+
+        def dfa_worker():
+            non_linear_measures["dfa"] = dict()
+
+            if len(rrs) > 0:
+                upper_scale_limit = min(1000, len(rrs))
+                [scales, f, alpha] = scalingExponent(
+                    rrs, 5, upper_scale_limit, 20, 1, 2)
+
+                non_linear_measures["dfa"]["scales"] = scales.tolist()
+                non_linear_measures["dfa"]["fluctuation_coefficients"] = f.tolist(
+                )
+                non_linear_measures["dfa"]["alpha"] = alpha
+
+        t1 = Thread(target=time_domain_worker)
+        t2 = Thread(target=sample_entropy_worker)
+        t3 = Thread(target=dfa_worker)
+        threads = [t1, t2, t3]
+        t1.start()
+        t2.start()
+        t3.start()
+
+        for thread in threads:
+            thread.join()
+
+        payload["time_domain_measures"] = time_domain_measures
+        payload["non_linear_measures"] = non_linear_measures
+
+        return ok(payload)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
-

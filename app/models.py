@@ -12,6 +12,10 @@ class Serializer(object):
     def serialize_list(l):
         return [m.serialize() for m in l]
 
+    def to_json(self):
+        body = self.serialize()
+        return jsonify(body)
+
 
 class Id(object):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,15 +48,13 @@ patient_medication = db.Table("patient_medication",
 
 
 class Message(Id, db.Model, Serializer):
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey(
+        'patient.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey(
+        'doctor.id'), nullable=False)
     message_text = db.Column(db.Text(length=500))
     date_sent = db.Column(db.BigInteger)
     from_patient = db.Column(db.Boolean)
-
-    def to_json(self):
-        body = self.serialize()
-        return jsonify(body)
 
 
 class Medication(Id, db.Model, Serializer):
@@ -62,17 +64,22 @@ class Medication(Id, db.Model, Serializer):
 
 class Patient(Human, db.Model, Serializer):
     birth_date = db.Column(db.Date, nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey(
+        'doctor.id'), nullable=False)
     doctor = db.relationship("Doctor")
-    heart_rate_measures = db.relationship("HeartRate", lazy="dynamic", cascade="all, delete-orphan")
-    step_measures = db.relationship("Steps", lazy="dynamic", cascade="all, delete-orphan")
-    activity_type_measures = db.relationship("ActivityType", lazy="dynamic", cascade="all, delete-orphan")
+    heart_rate_measures = db.relationship(
+        "HeartRate", lazy="dynamic", cascade="all, delete-orphan")
+    step_measures = db.relationship(
+        "Steps", lazy="dynamic", cascade="all, delete-orphan")
+    activity_type_measures = db.relationship(
+        "ActivityType", lazy="dynamic", cascade="all, delete-orphan")
     medications = db.relationship(
         "Medication",
         secondary=patient_medication,
         lazy="subquery"
     )
-    messages = db.relationship("Message", lazy="dynamic", cascade="all, delete-orphan")
+    messages = db.relationship(
+        "Message", lazy="dynamic", cascade="all, delete-orphan")
 
     def __init__(self, first_name, last_name):
         Human.__init__(self, first_name, last_name)
