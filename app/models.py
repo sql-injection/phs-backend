@@ -51,9 +51,9 @@ patient_medication = db.Table("patient_medication",
 
 patient_disease = db.Table("patient_disease",
                            db.Column("patient_id", db.Integer, db.ForeignKey(
-                                "patient.id", primary_key=True)),
+                                "patient.id"), primary_key=True),
                            db.Column("disease_id", db.Integer, db.ForeignKey(
-                                "disease.id", primary_key=True)))
+                                "disease.id"), primary_key=True))
 
 
 class Message(Id, db.Model, Serializer):

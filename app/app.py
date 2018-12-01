@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from lib.timeDomain import timeDomain
 from lib.multiScaleEntropy import sampEn
 from lib.DFA import scalingExponent
+from lib.poincare import correlation_coef, eclipse_fitting_methods
 
 env = Env()
 env.read_env()
@@ -189,6 +190,7 @@ def compute_health_metrics_in_time_window(patient_id):
 
         time_domain_measures = dict()
         non_linear_measures = dict()
+        non_linear_measures["poincare"] = dict()
 
         def time_domain_worker():
             [ann, sdnn, p_nn50, p_nn20, r_mssd] = timeDomain(rrs)
@@ -215,13 +217,27 @@ def compute_health_metrics_in_time_window(patient_id):
                 )
                 non_linear_measures["dfa"]["alpha"] = alpha
 
+        def poincare_coefficient():
+            coefficient = correlation_coef(rrs)
+            non_linear_measures["poincare"]["correlation_coefficient"] = coefficient
+
+        def eclipse_fitting():
+            standard_deviations = eclipse_fitting_methods(rrs)
+            non_linear_measures["poincare"]["standard_deviations"] = dict()
+            non_linear_measures["poincare"]["standard_deviations"]["sd1"] = standard_deviations["SD1"]
+            non_linear_measures["poincare"]["standard_deviations"]["sd2"] = standard_deviations["SD2"]
+
         t1 = Thread(target=time_domain_worker)
         t2 = Thread(target=sample_entropy_worker)
         t3 = Thread(target=dfa_worker)
-        threads = [t1, t2, t3]
+        t4 = Thread(target=poincare_coefficient)
+        t5 = Thread(target=eclipse_fitting)
+        threads = [t1, t2, t3, t4, t5]
         t1.start()
         t2.start()
         t3.start()
+        t4.start()
+        t5.start()
 
         for thread in threads:
             thread.join()
