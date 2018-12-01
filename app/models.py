@@ -43,8 +43,17 @@ patient_medication = db.Table("patient_medication",
                                   "patient.id"), primary_key=True),
                               db.Column("medication_id", db.Integer, db.ForeignKey(
                                   "medication.id"), primary_key=True),
-                              db.Column("prescription", db.Text(length=500))
+                              db.Column("dosage_amount", db.Float, nullable=False),
+                              db.Column("dosage_measure", db.String(100), nullable=False),
+                              db.Column("dosage_instructions", db.Text(length=500), nullable=False),
+                              db.Column("notes", db.Text(length=500))
                               )
+
+patient_disease = db.Table("patient_disease",
+                           db.Column("patient_id", db.Integer, db.ForeignKey(
+                                "patient.id", primary_key=True)),
+                           db.Column("disease_id", db.Integer, db.ForeignKey(
+                                "disease.id", primary_key=True)))
 
 
 class Message(Id, db.Model, Serializer):
@@ -59,7 +68,14 @@ class Message(Id, db.Model, Serializer):
 
 class Medication(Id, db.Model, Serializer):
     name = db.Column(db.String(100))
-    description = db.Column(db.Text(length=500))
+    notes = db.Column(db.Text(length=500), nullable=True)
+    url = db.Column(db.String(255))
+
+
+class Disease(Id, db.Model, Serializer):
+    name = db.Column(db.String(100))
+    notes = db.Column(db.Text(length=500), nullable=True)
+    url = db.Column(db.String(255))
 
 
 class Patient(Human, db.Model, Serializer):

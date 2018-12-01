@@ -41,6 +41,31 @@ def main():
              birth_date="1965-9-11", doctor_id=2)
     ]
 
+    diseases = [
+        dict(id=1, name="Myocarditis", url="https://rarediseases.info.nih.gov/diseases/7137/myocarditis"),
+        dict(id=2, name="Supraventricular Tachycardia ", url="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4295736/"),
+        dict(id=3, name="Tetralogy of Fallot", url="https://rarediseases.info.nih.gov/diseases/2245/tetralogy-of-fallot"),
+        dict(id=4, name="Congenital Mitral Stenosis", url="https://www.cdc.gov/ncbddd/heartdefects/hlhs.html"),
+        dict(id=5, name="Long QT Syndrome", url="https://rarediseases.info.nih.gov/diseases/6922/long-qt-syndrome"),
+        dict(id=6, name="Atrial flutter", url="https://www.cdc.gov/dhdsp/data_statistics/fact_sheets/fs_atrial_fibrillation.htm"),
+        dict(id=7, name="Wolf-Parkinson-White Syndrome", url="https://rarediseases.info.nih.gov/diseases/7897/wolff-parkinson-white-syndrome"),
+        dict(id=7, name="Atrial Fibrillation", url="https://www.cdc.gov/dhdsp/data_statistics/fact_sheets/fs_atrial_fibrillation.htm"),
+        dict(id=8, name="Ventricular Tachycardia", url="https://stanfordhealthcare.org/medical-conditions/blood-heart-circulation/ventricular-tachycardia.html"),
+        dict(id=9, name="Endocarditis", url="https://www.webmd.com/heart-disease/what-is-endocarditis#1"),
+        dict(id=10, name="Congestive Heart Failure", url="https://www.cdc.gov/dhdsp/data_statistics/fact_sheets/fs_heart_failure.htm")
+    ]
+
+    medications = [
+        dict(id=1, name="Milrinone", url="https://www.rxlist.com/primacor-iv-drug.htm#precautions",
+             notes="https://medlineplus.gov/ency/patientinstructions/000112.htm"),
+        dict(id=2, name="Verapamil", url="https://medlineplus.gov/druginfo/meds/a684030.html"),
+        dict(id=3, name="Propanolol", url="https://medlineplus.gov/druginfo/meds/a682607.html"),
+        dict(id=4, name="Procainamide", url="https://medlineplus.gov/druginfo/meds/a682398.html"),
+        dict(id=5, name="Amiodarone", url="https://medlineplus.gov/druginfo/meds/a687009.html"),
+        dict(id=6, name="Antibiotics", url="https://medlineplus.gov/antibiotics.html"),
+        dict(id=7, name="Digoxin", url="https://medlineplus.gov/druginfo/meds/a682301.html")
+    ]
+
     connection = pymysql.connect(
         host=args.host,
         user=args.user,
@@ -52,34 +77,67 @@ def main():
 
     try:
         with connection.cursor() as cursor:
-            doctor_sql_statement = "INSERT IGNORE INTO doctor (id, first_name, last_name) VALUES"
-            for index, doctor in enumerate(doctors):
-                doctor_sql_statement += "{} ({}, '{}', '{}')".format(
-                    "," if index > 0 else "",
-                    doctor["id"],
-                    doctor["first_name"],
-                    doctor["last_name"]
-                )
+            def patient_and_doctors():
+                doctor_sql_statement = "INSERT IGNORE INTO doctor (id, first_name, last_name) VALUES"
+                for index, doctor in enumerate(doctors):
+                    doctor_sql_statement += "{} ({}, '{}', '{}')".format(
+                        "," if index > 0 else "",
+                        doctor["id"],
+                        doctor["first_name"],
+                        doctor["last_name"]
+                    )
 
-            cursor.execute(doctor_sql_statement)
-            connection.commit()
+                cursor.execute(doctor_sql_statement)
+                connection.commit()
 
-            patient_sql_statement = """
-            INSERT IGNORE INTO patient (id, first_name, last_name, birth_date, doctor_id) VALUES
-            """
+                patient_sql_statement = """
+                INSERT IGNORE INTO patient (id, first_name, last_name, birth_date, doctor_id) VALUES
+                """
 
-            for index, patient in enumerate(patients):
-                patient_sql_statement += "{} ({}, '{}', '{}', '{}', {})".format(
-                    "," if index > 0 else "",
-                    patient["id"],
-                    patient["first_name"],
-                    patient["last_name"],
-                    patient["birth_date"],
-                    patient["doctor_id"]
-                )
+                for index, patient in enumerate(patients):
+                    patient_sql_statement += "{} ({}, '{}', '{}', '{}', {})".format(
+                        "," if index > 0 else "",
+                        patient["id"],
+                        patient["first_name"],
+                        patient["last_name"],
+                        patient["birth_date"],
+                        patient["doctor_id"]
+                    )
 
-            cursor.execute(patient_sql_statement)
-            connection.commit()
+                cursor.execute(patient_sql_statement)
+                connection.commit()
+
+            def add_diseases():
+                disease_sql_statement = "INSERT IGNORE INTO disease (id, name, url) VALUES"
+                for index, disease in enumerate(diseases):
+                    disease_sql_statement += "{} ({}, '{}', '{}')".format(
+                        "," if index > 0 else "",
+                        disease["id"],
+                        disease["name"],
+                        disease["url"]
+                    )
+
+                cursor.execute(disease_sql_statement)
+                connection.commit()
+
+            def add_medications():
+                medication_sql_statement = "INSERT IGNORE INTO medication (id, name, url, notes) VALUES"
+                for index, medication in enumerate(medications):
+                    medication_sql_statement += "{} ({}, '{}', '{}', {})".format(
+                        "," if index > 0 else "",
+                        medication["id"],
+                        medication["name"],
+                        medication["url"],
+                        "'{}'".format(medication["notes"]) if "notes" in medication else "NULL"
+                    )
+
+                cursor.execute(medication_sql_statement)
+                connection.commit()
+
+            patient_and_doctors()
+            add_diseases()
+            add_medications()
+
     finally:
         connection.close()
 
