@@ -240,6 +240,7 @@ def compute_health_metrics_in_time_window(patient_id):
             non_linear_measures["poincare"]["standard_deviations"] = dict()
             non_linear_measures["poincare"]["standard_deviations"]["sd1"] = standard_deviations["SD1"]
             non_linear_measures["poincare"]["standard_deviations"]["sd2"] = standard_deviations["SD2"]
+            non_linear_measures["poincare"]["rr"] = rrs
 
         t1 = Thread(target=time_domain_worker)
         t2 = Thread(target=sample_entropy_worker)
