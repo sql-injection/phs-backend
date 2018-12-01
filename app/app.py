@@ -7,6 +7,7 @@ from marshmallow.validate import OneOf
 from flask import Flask, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 
 from lib.timeDomain import timeDomain
 from lib.multiScaleEntropy import sampEn
@@ -46,15 +47,28 @@ app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
 )
 
-
+CORS(app)
 MIGRATION_DIR = os.path.join('app', 'migrations')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, directory=MIGRATION_DIR)
 
 
+
+
 @app.route("/")
 def hello_world():
     return "Hello, world!"
+
+
+@app.route("/patient/all", methods=["GET"])
+def get_patients():
+    from models import Patient
+    from tools import ok
+
+    patients = Patient.query.with_entities(Patient.id, Patient.first_name, Patient.last_name).all()
+    body = dict()
+    body["patients"] = patients
+    return ok(body)
 
 
 @app.route("/patient/<last_name>/<first_name>", methods=["GET"])

@@ -100,11 +100,10 @@ class Patient(Human, db.Model, Serializer):
     def __init__(self, first_name, last_name):
         Human.__init__(self, first_name, last_name)
 
-    def to_json(self):
-        body = self.serialize()
+    def serialize(self):
+        body = super(Patient, self).serialize()
         body["doctor"] = body["doctor"].serialize()
         body["birth_date"] = body["birth_date"].strftime("%Y:%m:%d")
-
         heart_rates = self.serialize_list(body["heart_rate_measures"])
         steps = self.serialize_list(body["step_measures"])
         activity_types = self.serialize_list(body["activity_type_measures"])
@@ -118,8 +117,7 @@ class Patient(Human, db.Model, Serializer):
         body["messages"] = messages
 
         del body["doctor_id"]
-
-        return jsonify(body)
+        return body
 
 
 class Doctor(Human, db.Model, Serializer):
