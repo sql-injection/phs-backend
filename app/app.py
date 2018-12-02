@@ -65,7 +65,7 @@ def get_patients():
     from models import Patient
     from tools import ok
 
-    patients = Patient.query.with_entities(Patient.id, Patient.first_name, Patient.last_name).all()
+    patients = Patient.query.with_entities(Patient.id, Patient.first_name, Patient.last_name, Patient.birth_date).all()
     body = dict()
     body["patients"] = patients
     return ok(body)
@@ -192,6 +192,7 @@ def compute_health_metrics_in_time_window(patient_id):
         return ApiError(status_code=ErrorCodes.BAD_REQUEST,
                         message="Unix timestamps given in start and end must be integers").to_json()
     finally:
+        print(patient_id, start_unix_time, end_unix_time)
         payload = dict()
 
         # Produce a list of RR intervals based on time window
@@ -201,6 +202,12 @@ def compute_health_metrics_in_time_window(patient_id):
             (HeartRate.unix_timestamp <= end_unix_time)
         ).with_entities(HeartRate.rr).all()
         rrs = [rr for rr_sublist in rr_list for rr in rr_sublist]
+
+        if len(rrs) < 1:
+            return ApiError(
+                status_code=ErrorCodes.BAD_REQUEST,
+                message="Insufficient RR intervals in time window {} to {}".format(start_unix_time, end_unix_time)
+            ).to_json()
 
         time_domain_measures = dict()
         non_linear_measures = dict()
@@ -215,8 +222,11 @@ def compute_health_metrics_in_time_window(patient_id):
             time_domain_measures["rmssd"] = r_mssd
 
         def sample_entropy_worker():
-            r = 0.2 * np.std(rrs)
-            non_linear_measures["sample_entropy"] = sampEn(rrs, 2, r)
+            try:
+                r = 0.2 * np.std(rrs)
+                non_linear_measures["sample_entropy"] = sampEn(rrs, 2, r)
+            except ValueError:
+                non_linear_measures["sample_entropy"] = 0.0
 
         def dfa_worker():
             non_linear_measures["dfa"] = dict()

@@ -1,6 +1,7 @@
 from app import db, env
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.inspection import inspect
+from sqlalchemy.dialects.mysql import BIGINT
 from flask import jsonify
 
 
@@ -31,7 +32,7 @@ class Human(Id):
 
 
 class PatientTimeSeriesMeasure(object):
-    unix_timestamp = db.Column(db.BigInteger, nullable=False, primary_key=True)
+    unix_timestamp = db.Column(BIGINT(unsigned=True), nullable=False, primary_key=True)
 
     @declared_attr
     def patient_id(self):
