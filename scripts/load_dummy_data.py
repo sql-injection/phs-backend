@@ -66,6 +66,39 @@ def main():
         dict(id=7, name="Digoxin", url="https://medlineplus.gov/druginfo/meds/a682301.html")
     ]
 
+    patient_medications = [
+        dict(patient_id=1, medication_id=1, dosage_amount=20, dosage_measure="mg", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=2, medication_id=2, dosage_amount=180, dosage_measure="mg/24hr", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=3, medication_id=3, dosage_amount=180, dosage_measure="mg/24hr", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=4, medication_id=4, dosage_amount=250, dosage_measure="mg", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=5, medication_id=5, dosage_amount=50, dosage_measure="mg", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=6, medication_id=6, dosage_amount=500, dosage_measure="mg", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=7, medication_id=7, dosage_amount=20, dosage_measure="mg", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=8, medication_id=1, dosage_amount=20, dosage_measure="mg", dosage_instructions=None,
+             notes=None),
+        dict(patient_id=9, medication_id=1, dosage_amount=20, dosage_measure="mg", dosage_instructions=None,
+             notes=None)
+    ]
+
+    patient_diseases = [
+        dict(patient_id=1, disease_id=1),
+        dict(patient_id=2, disease_id=2),
+        dict(patient_id=3, disease_id=3),
+        dict(patient_id=4, disease_id=4),
+        dict(patient_id=5, disease_id=5),
+        dict(patient_id=6, disease_id=6),
+        dict(patient_id=7, disease_id=7),
+        dict(patient_id=8, disease_id=8),
+        dict(patient_id=9, disease_id=9)
+    ]
+
     connection = pymysql.connect(
         host=args.host,
         user=args.user,
@@ -134,9 +167,40 @@ def main():
                 cursor.execute(medication_sql_statement)
                 connection.commit()
 
+            def add_patient_meds():
+                sql_statement = "INSERT IGNORE INTO patient_medication (patient_id, "\
+                        "medication_id, dosage_amount, dosage_measure, dosage_instructions, notes) VALUES"
+                for index, patient_medication in enumerate(patient_medications):
+                    sql_statement += "{} ({}, {}, {}, '{}', {}, {})".format(
+                        "," if index > 0 else "",
+                        patient_medication["patient_id"],
+                        patient_medication["medication_id"],
+                        patient_medication["dosage_amount"],
+                        patient_medication["dosage_measure"],
+                        "'{}'".format(patient_medication["dosage_instructions"]) if "dosage_instructions" in patient_medication else "NULL",
+                        "'{}'".format(patient_medication["notes"]) if "notes" in patient_medication else "NULL"
+                    )
+
+                cursor.execute(sql_statement)
+                connection.commit()
+
+            def add_patient_diseases():
+                sql_statement = "INSERT IGNORE INTO patient_disease (patient_id, disease_id) VALUES"
+                for index, patient_disease in enumerate(patient_diseases):
+                    sql_statement += "{} ({}, {})".format(
+                        "," if index > 0 else "",
+                        patient_disease["patient_id"],
+                        patient_disease["disease_id"]
+                    )
+
+                cursor.execute(sql_statement)
+                connection.commit()
+
             patient_and_doctors()
             add_diseases()
             add_medications()
+            add_patient_meds()
+            add_patient_diseases()
 
     finally:
         connection.close()

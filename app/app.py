@@ -73,7 +73,12 @@ def get_patients():
             min_timestamp
         )\
         .filter(Patient.id == HeartRate.patient_id)\
-        .with_entities(Patient.id, Patient.first_name, Patient.last_name, Patient.birth_date, min_timestamp, max_timestamp)\
+        .with_entities(Patient.id,
+                       Patient.first_name,
+                       Patient.last_name,
+                       Patient.birth_date,
+                       min_timestamp,
+                       max_timestamp)\
         .group_by(Patient.id)\
         .all()
 
@@ -203,7 +208,6 @@ def compute_health_metrics_in_time_window(patient_id):
         return ApiError(status_code=ErrorCodes.BAD_REQUEST,
                         message="Unix timestamps given in start and end must be integers").to_json()
     finally:
-        print(patient_id, start_unix_time, end_unix_time)
         payload = dict()
 
         # Produce a list of RR intervals based on time window

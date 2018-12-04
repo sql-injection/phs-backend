@@ -59,9 +59,9 @@ patient_disease = db.Table("patient_disease",
 
 class Message(Id, db.Model, Serializer):
     patient_id = db.Column(db.Integer, db.ForeignKey(
-        'patient.id'), nullable=False)
+        "patient.id"), nullable=False)
     doctor_id = db.Column(db.Integer, db.ForeignKey(
-        'doctor.id'), nullable=False)
+        "doctor.id"), nullable=False)
     message_text = db.Column(db.Text(length=500))
     date_sent = db.Column(db.BigInteger)
     from_patient = db.Column(db.Boolean)
@@ -95,8 +95,12 @@ class Patient(Human, db.Model, Serializer):
         secondary=patient_medication,
         lazy="subquery"
     )
-    messages = db.relationship(
-        "Message", lazy="dynamic", cascade="all, delete-orphan")
+    diseases = db.relationship(
+        "Disease",
+        secondary=patient_disease,
+        lazy="subquery"
+    )
+    messages = db.relationship("Message", lazy="dynamic", cascade="all, delete-orphan")
 
     def __init__(self, first_name, last_name):
         Human.__init__(self, first_name, last_name)
@@ -109,6 +113,7 @@ class Patient(Human, db.Model, Serializer):
         steps = self.serialize_list(body["step_measures"])
         activity_types = self.serialize_list(body["activity_type_measures"])
         medications = self.serialize_list(body["medications"])
+        diseases = self.serialize_list(body["diseases"])
         messages = self.serialize_list(body["messages"])
 
         body["heart_rate_measures"] = heart_rates
@@ -116,6 +121,7 @@ class Patient(Human, db.Model, Serializer):
         body["activity_type_measures"] = activity_types
         body["medications"] = medications
         body["messages"] = messages
+        body["diseases"] = diseases
 
         del body["doctor_id"]
         return body
