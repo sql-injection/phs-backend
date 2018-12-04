@@ -53,8 +53,6 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db, directory=MIGRATION_DIR)
 
 
-
-
 @app.route("/")
 def hello_world():
     return "Hello, world!"
@@ -62,10 +60,23 @@ def hello_world():
 
 @app.route("/patient/all", methods=["GET"])
 def get_patients():
-    from models import Patient
+    from models import Patient, HeartRate
     from tools import ok
+    from sqlalchemy.sql import label
 
-    patients = Patient.query.with_entities(Patient.id, Patient.first_name, Patient.last_name, Patient.birth_date).all()
+    max_timestamp = label("max_timestamp", db.func.max(HeartRate.unix_timestamp))
+    min_timestamp = label("min_timestamp", db.func.min(HeartRate.unix_timestamp))
+    patients = db.session\
+        .query(
+            Patient,
+            max_timestamp,
+            min_timestamp
+        )\
+        .filter(Patient.id == HeartRate.patient_id)\
+        .with_entities(Patient.id, Patient.first_name, Patient.last_name, Patient.birth_date, min_timestamp, max_timestamp)\
+        .group_by(Patient.id)\
+        .all()
+
     body = dict()
     body["patients"] = patients
     return ok(body)
